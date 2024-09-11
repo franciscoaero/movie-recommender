@@ -1,13 +1,29 @@
 from flask import Flask, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
+import pyodbc
 
 application = Flask(__name__)
 
-# Configuração do banco de dados SQLite local
-application.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///movies.db'
-application.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+# Configuração do banco de dados Azure SQL usando ODBC com ActiveDirectoryInteractive authentication
+driver = '{ODBC Driver 18 for SQL Server}'
+server = 'tcp:sqldb-users-dev.database.windows.net,1433'
+database = 'movies-db'
+
+# Inclua o ActiveDirectoryInteractive na connection string
+connection_string = (
+    f'Driver={driver};'
+    f'Server={server};'
+    f'Database={database};'
+    f'Encrypt=yes;'
+    f'TrustServerCertificate=no;'
+    f'Connection Timeout=30;'
+    f'Authentication=ActiveDirectoryInteractive;'
+)
 
 # Inicialização do SQLAlchemy
+application.config['SQLALCHEMY_DATABASE_URI'] = f'mssql+pyodbc:///?odbc_connect={connection_string}'
+application.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
 db = SQLAlchemy(application)
 
 # Definição do modelo User
