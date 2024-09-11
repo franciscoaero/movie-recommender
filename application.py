@@ -1,13 +1,18 @@
 from flask import Flask, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
 import pyodbc
+from dotenv import load_dotenv
+import os
+
+# Carregar variáveis de ambiente do arquivo .env
+load_dotenv()
 
 application = Flask(__name__)
 
-# Configuração do banco de dados Azure SQL usando ODBC com ActiveDirectoryInteractive authentication
+# Configuração do banco de dados usando variáveis de ambiente
 driver = '{ODBC Driver 18 for SQL Server}'
-server = 'tcp:sqldb-users-dev.database.windows.net,1433'
-database = 'movies-db'
+server = os.getenv('AZURE_SQL_SERVER')
+database = os.getenv('AZURE_SQL_DATABASE')
 
 # Inclua o ActiveDirectoryInteractive na connection string
 connection_string = (
