@@ -1,5 +1,6 @@
 from flask import Flask, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
+from flask_cors import CORS
 import pyodbc
 from dotenv import load_dotenv
 import os
@@ -9,10 +10,17 @@ load_dotenv()
 
 application = Flask(__name__)
 
+# Habilitar CORS
+CORS(application)
+
 # Configuração do banco de dados usando variáveis de ambiente
 driver = '{ODBC Driver 18 for SQL Server}'
 server = os.getenv('AZURE_SQL_SERVER')
 database = os.getenv('AZURE_SQL_DATABASE')
+
+
+print(f"Servidor: {server}")
+print(f"Banco de dados: {database}")
 
 # Inclua o ActiveDirectoryInteractive na connection string
 connection_string = (
@@ -52,6 +60,13 @@ class Rating(db.Model):
 @application.route('/')
 def home():
     return jsonify(message="Welcome to the Movie Recommendation API!")
+
+# Endpoint para listar todos os usuários
+@application.route('/users', methods=['GET'])
+def get_users():
+    users = User.query.all()
+    result = [{'id': user.id, 'username': user.username} for user in users]
+    return jsonify(result), 200
 
 # Endpoint para adicionar um novo usuário
 @application.route('/users', methods=['POST'])
@@ -95,6 +110,16 @@ def add_rating():
     
     return jsonify({'id': new_rating.id, 'user_id': new_rating.user_id, 'movie_id': new_rating.movie_id, 'rating': new_rating.rating}), 201
 
+# Endpoint para retornar os filmes com melhores classificações
+@application.route('/movies/top-rated', methods=['GET'])
+def get_top_rated_movies():
+    top_rated_movies = db.session.query(
+        Movie.id, Movie.title, db.func.avg(Rating.rating).label('average_rating')
+    ).join(Rating).group_by(Movie.id, Movie.title).order_by(db.desc('average_rating')).all()
+
+    movies = [{'id': movie.id, 'title': movie.title, 'average_rating': round(movie.average_rating, 1)} for movie in top_rated_movies]
+    return jsonify(movies), 200
+
 # Endpoint para consultar as avaliações de um filme específico
 @application.route('/movies/<int:movie_id>/ratings', methods=['GET'])
 def get_movie_ratings(movie_id):
@@ -105,6 +130,14 @@ def get_movie_ratings(movie_id):
     
     results = [{'user_id': r.user_id, 'rating': r.rating} for r in ratings]
     return jsonify({'movie_id': movie_id, 'ratings': results}), 200
+
+# Endpoint para listar todos os filmes
+@application.route('/movies', methods=['GET'])
+def get_movies():
+    movies = Movie.query.all()
+    results = [{'id': movie.id, 'title': movie.title} for movie in movies]
+    
+    return jsonify({'movies': results}), 200
 
 if __name__ == '__main__':
     with application.app_context():
