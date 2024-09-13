@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import { useParams } from 'react-router-dom';
 
 function RateMovie() {
   const [movies, setMovies] = useState([]);
   const [selectedMovieId, setSelectedMovieId] = useState('');
   const [rating, setRating] = useState('');
-  const [userId, setUserId] = useState('1'); // Definindo um ID de usuário fixo, pode ser alterado
+  const { userId } = useParams();  // Pegando o userId da URL
 
   useEffect(() => {
     axios.get('http://localhost:5000/movies')
@@ -24,7 +25,7 @@ function RateMovie() {
     }
 
     axios.post('http://localhost:5000/ratings', {
-      user_id: userId, // Incluindo user_id na requisição
+      user_id: userId,  // Incluindo userId da URL na requisição
       movie_id: selectedMovieId,
       rating: parseFloat(rating),
     })
@@ -61,14 +62,6 @@ function RateMovie() {
         value={rating}
         onChange={e => setRating(e.target.value)}
         placeholder="Classifique de 1 a 5"
-      />
-
-      {/* Adicionando campo para o usuário se necessário */}
-      <input
-        type="text"
-        value={userId}
-        onChange={e => setUserId(e.target.value)}
-        placeholder="User ID"
       />
 
       <button onClick={submitRating}>Enviar Classificação</button>

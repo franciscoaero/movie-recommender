@@ -22,10 +22,7 @@ database = os.getenv('AZURE_SQL_DATABASE')
 
 # Configuração do Azure Blob Storage
 blob_service_client = BlobServiceClient.from_connection_string(os.getenv('AZURE_STORAGE_CONNECTION_STRING'))
-container_name = 'movie-covers'  # Certifique-se de que este container existe no Azure
-
-print(f"Servidor: {server}")
-print(f"Banco de dados: {database}")
+container_name = 'movie-covers'
 
 # Inclua o ActiveDirectoryInteractive na connection string
 connection_string = (

@@ -6,24 +6,18 @@ function UserSelection() {
   const [users, setUsers] = useState([]);
 
   useEffect(() => {
-    // Carregar os usuários da API
     axios.get('http://localhost:5000/users')
-      .then(response => {
-        setUsers(response.data);
-      })
-      .catch(error => {
-        console.error("There was an error fetching the users!", error);
-      });
+      .then(response => setUsers(response.data))
+      .catch(error => console.error('Erro ao buscar usuários:', error));
   }, []);
 
   return (
     <div className="user-selection">
-      <h2>Select Your Profile</h2>
+      <h1>Select User</h1>
       <div className="user-grid">
         {users.map(user => (
-          <Link to={`/user/${user.id}`} key={user.id} className="user-card">
-            <div className="user-avatar">{user.username.charAt(0)}</div>
-            <p>{user.username}</p>
+          <Link key={user.id} to={`/user/${user.id}/top-rated`} className="user-card">
+            {user.username.charAt(0).toUpperCase()}
           </Link>
         ))}
       </div>
