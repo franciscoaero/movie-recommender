@@ -6,7 +6,7 @@ function AddUser() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    axios.post('http://localhost:5000/users', { username })
+    axios.post('${backendUrl}/users', { username })
       .then(response => {
         alert('User created successfully!');
         setUsername("");

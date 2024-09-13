@@ -27,7 +27,7 @@ function AddMovie() {
     formData.append('cover', cover);
 
     try {
-      await axios.post('http://localhost:5000/movies', formData, {
+      await axios.post('${backendUrl}/movies', formData, {
         headers: {
           'Content-Type': 'multipart/form-data'
         }

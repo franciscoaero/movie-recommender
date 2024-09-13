@@ -9,7 +9,7 @@ function RateMovie() {
   const { userId } = useParams();  // Pegando o userId da URL
 
   useEffect(() => {
-    axios.get('http://localhost:5000/movies')
+    axios.get('${backendUrl}/movies')
       .then(response => {
         setMovies(response.data.movies);
       })
@@ -24,7 +24,7 @@ function RateMovie() {
       return;
     }
 
-    axios.post('http://localhost:5000/ratings', {
+    axios.post('${backendUrl}/ratings', {
       user_id: userId,  // Incluindo userId da URL na requisição
       movie_id: selectedMovieId,
       rating: parseFloat(rating),

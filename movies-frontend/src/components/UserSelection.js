@@ -6,7 +6,7 @@ function UserSelection() {
   const [users, setUsers] = useState([]);
 
   useEffect(() => {
-    axios.get('http://localhost:5000/users')
+    axios.get('${backendUrl}/users')
       .then(response => setUsers(response.data))
       .catch(error => console.error('Erro ao buscar usuários:', error));
   }, []);
