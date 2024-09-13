@@ -13,7 +13,7 @@ function UserSelection() {
 
   return (
     <div className="user-selection">
-      <h1>Select User</h1>
+      <h1>Select User:</h1>
       <div className="user-grid">
         {users.map(user => (
           <Link key={user.id} to={`/user/${user.id}/top-rated`} className="user-card">
