@@ -3,44 +3,54 @@ import axios from 'axios';
 
 function AddMovie() {
   const [title, setTitle] = useState('');
-  const [error, setError] = useState(null);
-  const [success, setSuccess] = useState(null);
+  const [cover, setCover] = useState(null);
+
+  const handleTitleChange = (e) => {
+    setTitle(e.target.value);
+  };
+
+  const handleCoverChange = (e) => {
+    setCover(e.target.files[0]); // Captura o arquivo de imagem
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
+    // Verifique se o título e a capa estão preenchidos
+    if (!title || !cover) {
+      alert("Both title and cover are required.");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('title', title);
+    formData.append('cover', cover);
+
     try {
-      const response = await axios.post('http://localhost:5000/movies', { title });
-      if (response.status === 201) {
-        setSuccess('Movie added successfully!');
-        setTitle(''); // Limpa o campo após adicionar
-      } else {
-        setError('Something went wrong!');
-      }
-    } catch (err) {
-      setError('Error adding movie. Please try again.');
+      await axios.post('http://localhost:5000/movies', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+      alert('Movie added successfully!');
+    } catch (error) {
+      console.error('Error uploading movie:', error);
+      alert('Failed to add movie');
     }
   };
 
   return (
-    <div className="form-container">
-      <h2>Add a New Movie</h2>
-      <form onSubmit={handleSubmit}>
-        <label>
-          Movie Title:
-          <input
-            type="text"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            required
-          />
-        </label>
-        <button type="submit">Add Movie</button>
-      </form>
-
-      {error && <p className="error">{error}</p>}
-      {success && <p className="success">{success}</p>}
-    </div>
+    <form onSubmit={handleSubmit}>
+      <div>
+        <label>Movie Title:</label>
+        <input type="text" value={title} onChange={handleTitleChange} required />
+      </div>
+      <div>
+        <label>Cover Image:</label>
+        <input type="file" onChange={handleCoverChange} accept="image/*" required />
+      </div>
+      <button type="submit">Add Movie</button>
+    </form>
   );
 }
 

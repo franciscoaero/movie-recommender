@@ -2,8 +2,10 @@ import React from 'react';
 import { Routes, Route, Link, BrowserRouter as Router } from 'react-router-dom';
 import TopRatedMovies from './components/TopRatedMovies';
 import RateMovie from './components/RateMovie';
-import AddMovie from './components/AddMovie'; // Importando o novo componente
-import './App.css'; // Importando o arquivo de CSS
+import AddMovie from './components/AddMovie';
+import AddUser from './components/AddUser';  // Importando o componente de adicionar usuário
+import UserSelection from './components/UserSelection';  // Importando o componente de seleção de usuário
+import './App.css';
 
 function App() {
   return (
@@ -14,16 +16,18 @@ function App() {
           <ul className="navbar-menu">
             <li><Link to="/">Top Rated Movies</Link></li>
             <li><Link to="/rate-movie">Rate a Movie</Link></li>
-            <li><Link to="/add-movie">Add a Movie</Link></li> {/* Link para o novo componente */}
+            <li><Link to="/add-movie">Add a Movie</Link></li>
           </ul>
         </nav>
       </header>
 
       <main>
         <Routes>
-          <Route path="/" element={<TopRatedMovies />} />
+          <Route path="/" element={<UserSelection />} />  {/* Tela inicial com seleção de usuário */}
+          <Route path="/user/:userId" element={<TopRatedMovies />} />  {/* Após selecionar o usuário */}
           <Route path="/rate-movie" element={<RateMovie />} />
-          <Route path="/add-movie" element={<AddMovie />} /> {/* Nova rota */}
+          <Route path="/add-movie" element={<AddMovie />} />
+          <Route path="/add-user" element={<AddUser />} />  {/* Adicionar usuário */}
         </Routes>
       </main>
 

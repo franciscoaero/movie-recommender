@@ -1,9 +1,11 @@
 from flask import Flask, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
-import pyodbc
 from dotenv import load_dotenv
 import os
+import pyodbc
+from azure.storage.blob import BlobServiceClient, ContentSettings
+from werkzeug.utils import secure_filename
 
 # Carregar variáveis de ambiente do arquivo .env
 load_dotenv()
@@ -18,6 +20,9 @@ driver = '{ODBC Driver 18 for SQL Server}'
 server = os.getenv('AZURE_SQL_SERVER')
 database = os.getenv('AZURE_SQL_DATABASE')
 
+# Configuração do Azure Blob Storage
+blob_service_client = BlobServiceClient.from_connection_string(os.getenv('AZURE_STORAGE_CONNECTION_STRING'))
+container_name = 'movie-covers'  # Certifique-se de que este container existe no Azure
 
 print(f"Servidor: {server}")
 print(f"Banco de dados: {database}")
@@ -39,15 +44,16 @@ application.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(application)
 
+# Definição do modelo Movie com campo para URL da imagem
+class Movie(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(120), unique=True, nullable=False)
+    cover_url = db.Column(db.String(500), nullable=True)
+
 # Definição do modelo User
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
-
-# Definição do modelo Movie
-class Movie(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    title = db.Column(db.String(120), unique=True, nullable=False)
 
 # Definição do modelo Rating
 class Rating(db.Model):
@@ -81,18 +87,42 @@ def add_user():
     
     return jsonify({'id': new_user.id, 'username': new_user.username}), 201
 
-# Endpoint para adicionar um novo filme
+# Função para upload da capa do filme
+def upload_cover_to_blob(file):
+    try:
+        # Preparar o nome seguro do arquivo
+        filename = secure_filename(file.filename)
+
+        # Criar um cliente para o blob
+        blob_client = blob_service_client.get_blob_client(container=container_name, blob=filename)
+
+        # Definir o tipo de conteúdo para a imagem
+        blob_client.upload_blob(file, content_settings=ContentSettings(content_type=file.content_type))
+
+        # Retornar a URL do blob
+        return blob_client.url
+    except Exception as e:
+        print(f"Erro ao fazer upload da capa: {e}")
+        return None
+    
+# Endpoint para adicionar um novo filme com upload da capa
 @application.route('/movies', methods=['POST'])
 def add_movie():
-    title = request.json.get('title')
+    title = request.form.get('title')
+    cover = request.files.get('cover')
+
     if title is None or Movie.query.filter_by(title=title).first():
         return jsonify({'message': 'Invalid title or movie already exists'}), 400
 
-    new_movie = Movie(title=title)
+    # Upload da capa para o Azure Blob Storage
+    cover_url = upload_cover_to_blob(cover) if cover else None
+
+    # Criar o novo filme
+    new_movie = Movie(title=title, cover_url=cover_url)
     db.session.add(new_movie)
     db.session.commit()
     
-    return jsonify({'id': new_movie.id, 'title': new_movie.title}), 201
+    return jsonify({'id': new_movie.id, 'title': new_movie.title, 'cover_url': new_movie.cover_url}), 201
 
 # Endpoint para adicionar uma avaliação de filme
 @application.route('/ratings', methods=['POST'])
@@ -114,10 +144,19 @@ def add_rating():
 @application.route('/movies/top-rated', methods=['GET'])
 def get_top_rated_movies():
     top_rated_movies = db.session.query(
-        Movie.id, Movie.title, db.func.avg(Rating.rating).label('average_rating')
-    ).join(Rating).group_by(Movie.id, Movie.title).order_by(db.desc('average_rating')).all()
+        Movie.id, Movie.title, Movie.cover_url, db.func.avg(Rating.rating).label('average_rating')
+    ).join(Rating).group_by(Movie.id, Movie.title, Movie.cover_url).order_by(db.desc('average_rating')).all()
 
-    movies = [{'id': movie.id, 'title': movie.title, 'average_rating': round(movie.average_rating, 1)} for movie in top_rated_movies]
+    # Incluindo o campo 'cover_url' no resultado retornado
+    movies = [
+        {
+            'id': movie.id,
+            'title': movie.title,
+            'cover_url': movie.cover_url,
+            'average_rating': round(movie.average_rating, 1)
+        }
+        for movie in top_rated_movies
+    ]
     return jsonify(movies), 200
 
 # Endpoint para consultar as avaliações de um filme específico

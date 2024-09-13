@@ -1,34 +1,36 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 
-const AddUser = () => {
-  const [username, setUsername] = useState('');
+function AddUser() {
+  const [username, setUsername] = useState("");
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    // Enviando o novo usuário para a API
     axios.post('http://localhost:5000/users', { username })
       .then(response => {
-        alert('Usuário adicionado com sucesso!');
-        setUsername('');
+        alert('User created successfully!');
+        setUsername("");
       })
       .catch(error => {
-        console.error('Erro ao adicionar usuário:', error);
+        alert('Error creating user.');
       });
   };
 
   return (
-    <form onSubmit={handleSubmit}>
-      <h3>Adicionar Usuário</h3>
-      <input
-        type="text"
-        value={username}
-        onChange={(e) => setUsername(e.target.value)}
-        placeholder="Nome do usuário"
-      />
-      <button type="submit">Adicionar</button>
-    </form>
+    <div>
+      <h2>Add New User</h2>
+      <form onSubmit={handleSubmit}>
+        <input 
+          type="text" 
+          value={username} 
+          onChange={(e) => setUsername(e.target.value)} 
+          placeholder="Enter username" 
+          required 
+        />
+        <button type="submit">Add User</button>
+      </form>
+    </div>
   );
-};
+}
 
 export default AddUser;
