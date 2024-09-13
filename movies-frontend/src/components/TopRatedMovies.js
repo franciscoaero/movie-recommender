@@ -5,7 +5,7 @@ function TopRatedMovies() {
   const [movies, setMovies] = useState([]);
 
   useEffect(() => {
-    axios.get('${backendUrl}/movies/top-rated')
+    axios.get('https://app-movies-dev-001-a7c0f2b7a3bwckgc.brazilsouth-01.azurewebsites.net/movies/top-rated')
       .then(response => {
         setMovies(response.data);
       })

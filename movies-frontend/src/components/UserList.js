@@ -5,7 +5,7 @@ const UserList = () => {
   const [users, setUsers] = useState([]);
 
   useEffect(() => {
-    axios.get('${backendUrl}/users')
+    axios.get('https://app-movies-dev-001-a7c0f2b7a3bwckgc.brazilsouth-01.azurewebsites.net/users')
       .then(response => {
         setUsers(response.data);  // Atualiza o estado com os usuários retornados
       })
