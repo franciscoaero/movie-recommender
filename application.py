@@ -3,7 +3,6 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
 from dotenv import load_dotenv
 import os
-import pyodbc
 from azure.storage.blob import BlobServiceClient, ContentSettings
 from werkzeug.utils import secure_filename
 
@@ -15,31 +14,50 @@ application = Flask(__name__)
 # Habilitar CORS
 CORS(application)
 
-# Configuração do banco de dados usando variáveis de ambiente
-driver = '{ODBC Driver 18 for SQL Server}'
-server = os.getenv('AZURE_SQL_SERVER')
-database = os.getenv('AZURE_SQL_DATABASE')
+# Verificar se está em desenvolvimento ou produção
+if os.getenv('FLASK_ENV') == 'development':
+    # Se o ambiente for de desenvolvimento, utilizar SQLite
+    application.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///local.db'  # Banco de dados local
+    print("Usando banco de dados local SQLite")
+else:
+    # Configuração para Azure SQL Server
+    driver = '{ODBC Driver 18 for SQL Server}'
+    server = os.getenv('AZURE_SQL_SERVER')
+    database = os.getenv('AZURE_SQL_DATABASE')
+
+    # Verificar se as variáveis de ambiente estão corretamente definidas
+    if not server or not database:
+        raise ValueError("As variáveis de ambiente 'AZURE_SQL_SERVER' e 'AZURE_SQL_DATABASE' precisam ser definidas.")
+    
+    print(f"Servidor: {server}")
+    print(f"Banco de dados: {database}")
+
+    connection_string = (
+        f'Driver={driver};'
+        f'Server={server};'
+        f'Database={database};'
+        f'Encrypt=yes;'
+        f'TrustServerCertificate=no;'
+        f'Connection Timeout=30;'
+        f'Authentication=ActiveDirectoryManagedIdentity;'  # Usando Managed Identity
+    )
+
+    try:
+        application.config['SQLALCHEMY_DATABASE_URI'] = f'mssql+pyodbc:///?odbc_connect={connection_string}'
+    except Exception as e:
+        print(f"Erro ao configurar a string de conexão: {e}")
+
+application.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+# Inicializar o banco de dados
+try:
+    db = SQLAlchemy(application)
+except Exception as e:
+    print(f"Erro ao conectar ao banco de dados: {e}")
 
 # Configuração do Azure Blob Storage
 blob_service_client = BlobServiceClient.from_connection_string(os.getenv('AZURE_STORAGE_CONNECTION_STRING'))
-container_name = 'movie-covers'
-
-# Inclua o ActiveDirectoryInteractive na connection string
-connection_string = (
-    f'Driver={driver};'
-    f'Server={server};'
-    f'Database={database};'
-    f'Encrypt=yes;'
-    f'TrustServerCertificate=no;'
-    f'Connection Timeout=30;'
-    f'Authentication=ActiveDirectoryInteractive;'
-)
-
-# Inicialização do SQLAlchemy
-application.config['SQLALCHEMY_DATABASE_URI'] = f'mssql+pyodbc:///?odbc_connect={connection_string}'
-application.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-
-db = SQLAlchemy(application)
+container_name = 'movie-covers'  # Certifique-se de que este container existe no Azure
 
 # Definição do modelo Movie com campo para URL da imagem
 class Movie(db.Model):
