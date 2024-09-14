@@ -6,7 +6,7 @@ function AddUser() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    axios.post('http://127.0.0.1:5000/users', { username })
+    axios.post('https://app-movies-dev-001-a7c0f2b7a3bwckgc.brazilsouth-01.azurewebsites.net/users', { username })
       .then(response => {
         alert('User created successfully!');
         setUsername("");

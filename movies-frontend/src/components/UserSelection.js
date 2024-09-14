@@ -6,7 +6,7 @@ function UserSelection() {
   const [users, setUsers] = useState([]);
 
   useEffect(() => {
-    axios.get('http://127.0.0.1:5000/users')
+    axios.get('https://app-movies-dev-001-a7c0f2b7a3bwckgc.brazilsouth-01.azurewebsites.net/users')
       .then(response => setUsers(response.data))
       .catch(error => console.error('Erro ao buscar usuários:', error));
   }, []);

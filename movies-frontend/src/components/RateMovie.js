@@ -9,7 +9,7 @@ function RateMovie() {
   const { userId } = useParams();  // Pegando o userId da URL
 
   useEffect(() => {
-    axios.get('http://127.0.0.1:5000/movies')
+    axios.get('https://app-movies-dev-001-a7c0f2b7a3bwckgc.brazilsouth-01.azurewebsites.net/movies')
       .then(response => {
         setMovies(response.data.movies);
       })
@@ -24,7 +24,7 @@ function RateMovie() {
       return;
     }
 
-    axios.post('http://127.0.0.1:5000/ratings', {
+    axios.post('https://app-movies-dev-001-a7c0f2b7a3bwckgc.brazilsouth-01.azurewebsites.net/ratings', {
       user_id: userId,  // Incluindo userId da URL na requisição
       movie_id: selectedMovieId,
       rating: parseFloat(rating),
