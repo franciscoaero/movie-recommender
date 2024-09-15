@@ -8,6 +8,8 @@ from werkzeug.utils import secure_filename
 import jwt
 import requests
 from functools import wraps
+from jwt.algorithms import RSAAlgorithm
+import json
 
 # Carregar variáveis de ambiente do arquivo .env
 load_dotenv()
@@ -82,9 +84,7 @@ class Rating(db.Model):
 
 # Função para obter a chave pública do Azure AD
 def get_jwks_keys():
-    jwks_url = "https://login.microsoftonline.com/{tenant_id}/discovery/v2.0/keys".format(
-        tenant_id=os.getenv('AZURE_TENANT_ID')
-    )
+    jwks_url = f"https://login.microsoftonline.com/{os.getenv('AZURE_TENANT_ID')}/discovery/v2.0/keys"
     response = requests.get(jwks_url)
     return response.json()
 
@@ -97,16 +97,42 @@ def token_required(f):
         # Pega o token do cabeçalho Authorization
         if 'Authorization' in request.headers:
             token = request.headers['Authorization'].split()[1]  # O token vem como "Bearer {token}"
-        
+
         if not token:
             return jsonify({'message': 'Token is missing!'}), 401
 
         try:
             # Obtenha as chaves públicas (JWKS) do Azure AD
-            jwks_keys = get_jwks_keys()
+            jwks = get_jwks_keys()
+
+            # Pega o cabeçalho do token JWT
+            header = jwt.get_unverified_header(token)
+
+            # Busca a chave correspondente pelo 'kid'
+            rsa_key = {}
+            for key in jwks['keys']:
+                if key['kid'] == header['kid']:
+                    rsa_key = {
+                        'kty': key['kty'],
+                        'kid': key['kid'],
+                        'use': key['use'],
+                        'n': key['n'],
+                        'e': key['e']
+                    }
+                    break
+
+            if not rsa_key:
+                return jsonify({'message': 'Token is invalid! RSA key not found.'}), 401
 
             # Decodificar e verificar o token
-            decoded = jwt.decode(token, jwks_keys, algorithms=["RS256"], audience=os.getenv('AZURE_CLIENT_ID'))
+            public_key = RSAAlgorithm.from_jwk(json.dumps(rsa_key))
+            decoded = jwt.decode(
+                token,
+                public_key,
+                algorithms=["RS256"],
+                audience=os.getenv('AZURE_CLIENT_ID'),  # Verifique o 'aud' (audience)
+                issuer=f"https://sts.windows.net/{os.getenv('AZURE_TENANT_ID')}/"  # Verifique o emissor
+            )
             current_user = decoded['sub']  # ID do usuário (subject)
 
         except jwt.ExpiredSignatureError:
@@ -115,7 +141,7 @@ def token_required(f):
             return jsonify({'message': 'Token is invalid!', 'error': str(e)}), 401
 
         return f(current_user, *args, **kwargs)
-    
+
     return decorated
 
 # Rota inicial
