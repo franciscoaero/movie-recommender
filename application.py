@@ -5,6 +5,9 @@ from dotenv import load_dotenv
 import os
 from azure.storage.blob import BlobServiceClient, ContentSettings
 from werkzeug.utils import secure_filename
+import jwt
+import requests
+from functools import wraps
 
 # Carregar variáveis de ambiente do arquivo .env
 load_dotenv()
@@ -39,7 +42,7 @@ else:
         f'Encrypt=yes;'
         f'TrustServerCertificate=no;'
         f'Connection Timeout=30;'
-        f'Authentication=ActiveDirectoryIntegrated;'  # Usando Managed Identity
+        f'Authentication=ActiveDirectoryManagedIdentity;'  # Usando Managed Identity
     )
 
     try:
@@ -77,6 +80,44 @@ class Rating(db.Model):
     movie_id = db.Column(db.Integer, db.ForeignKey('movie.id'), nullable=False)
     rating = db.Column(db.Float, nullable=False)
 
+# Função para obter a chave pública do Azure AD
+def get_jwks_keys():
+    jwks_url = "https://login.microsoftonline.com/{tenant_id}/discovery/v2.0/keys".format(
+        tenant_id=os.getenv('AZURE_TENANT_ID')
+    )
+    response = requests.get(jwks_url)
+    return response.json()
+
+# Função para verificar o token JWT
+def token_required(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        token = None
+
+        # Pega o token do cabeçalho Authorization
+        if 'Authorization' in request.headers:
+            token = request.headers['Authorization'].split()[1]  # O token vem como "Bearer {token}"
+        
+        if not token:
+            return jsonify({'message': 'Token is missing!'}), 401
+
+        try:
+            # Obtenha as chaves públicas (JWKS) do Azure AD
+            jwks_keys = get_jwks_keys()
+
+            # Decodificar e verificar o token
+            decoded = jwt.decode(token, jwks_keys, algorithms=["RS256"], audience=os.getenv('AZURE_CLIENT_ID'))
+            current_user = decoded['sub']  # ID do usuário (subject)
+
+        except jwt.ExpiredSignatureError:
+            return jsonify({'message': 'Token has expired!'}), 401
+        except jwt.InvalidTokenError as e:
+            return jsonify({'message': 'Token is invalid!', 'error': str(e)}), 401
+
+        return f(current_user, *args, **kwargs)
+    
+    return decorated
+
 # Rota inicial
 @application.route('/')
 def home():
@@ -84,14 +125,16 @@ def home():
 
 # Endpoint para listar todos os usuários
 @application.route('/users', methods=['GET'])
-def get_users():
+@token_required
+def get_users(current_user):
     users = User.query.all()
     result = [{'id': user.id, 'username': user.username} for user in users]
     return jsonify(result), 200
 
 # Endpoint para adicionar um novo usuário
 @application.route('/users', methods=['POST'])
-def add_user():
+@token_required
+def add_user(current_user):
     username = request.json.get('username')
     if username is None or User.query.filter_by(username=username).first():
         return jsonify({'message': 'Invalid username or username already exists'}), 400
@@ -122,7 +165,8 @@ def upload_cover_to_blob(file):
     
 # Endpoint para adicionar um novo filme com upload da capa
 @application.route('/movies', methods=['POST'])
-def add_movie():
+@token_required
+def add_movie(current_user):
     title = request.form.get('title')
     cover = request.files.get('cover')
 
@@ -141,7 +185,8 @@ def add_movie():
 
 # Endpoint para adicionar uma avaliação de filme
 @application.route('/ratings', methods=['POST'])
-def add_rating():
+@token_required
+def add_rating(current_user):
     user_id = request.json.get('user_id')
     movie_id = request.json.get('movie_id')
     rating_value = request.json.get('rating')
@@ -157,12 +202,12 @@ def add_rating():
 
 # Endpoint para retornar os filmes com melhores classificações
 @application.route('/movies/top-rated', methods=['GET'])
-def get_top_rated_movies():
+@token_required
+def get_top_rated_movies(current_user):
     top_rated_movies = db.session.query(
         Movie.id, Movie.title, Movie.cover_url, db.func.avg(Rating.rating).label('average_rating')
     ).join(Rating).group_by(Movie.id, Movie.title, Movie.cover_url).order_by(db.desc('average_rating')).all()
 
-    # Incluindo o campo 'cover_url' no resultado retornado
     movies = [
         {
             'id': movie.id,
@@ -176,7 +221,8 @@ def get_top_rated_movies():
 
 # Endpoint para consultar as avaliações de um filme específico
 @application.route('/movies/<int:movie_id>/ratings', methods=['GET'])
-def get_movie_ratings(movie_id):
+@token_required
+def get_movie_ratings(current_user, movie_id):
     ratings = Rating.query.filter_by(movie_id=movie_id).all()
     
     if not ratings:
@@ -187,7 +233,8 @@ def get_movie_ratings(movie_id):
 
 # Endpoint para listar todos os filmes
 @application.route('/movies', methods=['GET'])
-def get_movies():
+@token_required
+def get_movies(current_user):
     movies = Movie.query.all()
     results = [{'id': movie.id, 'title': movie.title} for movie in movies]
     
