@@ -24,6 +24,8 @@ function UserSelection() {
         });
 
         const token = response.accessToken;
+        console.log('Token:', token);  // Para verificar se o token está sendo obtido corretamente
+
 
         // Faz a requisição ao backend usando a instância api com o token JWT
         const res = await api.get('/users', {

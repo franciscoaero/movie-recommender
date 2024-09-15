@@ -26,6 +26,9 @@ api.interceptors.request.use(
         account: account,
       });
 
+      // Log para verificar o token antes de enviar a requisição
+      console.log('Token JWT sendo enviado:', response.accessToken);
+
       // Adicionar o token de autenticação no cabeçalho da requisição
       config.headers['Authorization'] = `Bearer ${response.accessToken}`;
     } catch (error) {
