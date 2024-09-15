@@ -130,7 +130,7 @@ def token_required(f):
                 token,
                 public_key,
                 algorithms=["RS256"],
-                audience=os.getenv('AZURE_CLIENT_ID'),  # Verifique o 'aud' (audience)
+                audience="api://aaece82d-86c9-4dbb-be37-60f630246081",  # Verifique o 'aud' (audience)
                 issuer=f"https://sts.windows.net/{os.getenv('AZURE_TENANT_ID')}/"  # Verifique o emissor
             )
             current_user = decoded['sub']  # ID do usuário (subject)
