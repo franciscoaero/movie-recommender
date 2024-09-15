@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
+import api from '../services/api';  // Importe a instância de API configurada com o token
 import { useParams } from 'react-router-dom';
 
 function RateMovie() {
@@ -9,7 +9,8 @@ function RateMovie() {
   const { userId } = useParams();  // Pegando o userId da URL
 
   useEffect(() => {
-    axios.get('https://app-movies-dev-001-a7c0f2b7a3bwckgc.brazilsouth-01.azurewebsites.net/movies')
+    // Usando a instância 'api' para fazer a requisição
+    api.get('/movies')
       .then(response => {
         setMovies(response.data.movies);
       })
@@ -18,25 +19,26 @@ function RateMovie() {
       });
   }, []);
 
-  const submitRating = () => {
+  const submitRating = async () => {
     if (!selectedMovieId || !rating || !userId) {
       alert('Por favor, selecione um filme, forneça uma classificação e um usuário.');
       return;
     }
 
-    axios.post('https://app-movies-dev-001-a7c0f2b7a3bwckgc.brazilsouth-01.azurewebsites.net/ratings', {
-      user_id: userId,  // Incluindo userId da URL na requisição
-      movie_id: selectedMovieId,
-      rating: parseFloat(rating),
-    })
-    .then(response => {
+    try {
+      // Usando a instância 'api' para enviar a classificação
+      await api.post('/ratings', {
+        user_id: userId,  // Incluindo userId da URL na requisição
+        movie_id: selectedMovieId,
+        rating: parseFloat(rating),
+      });
       alert('Classificação enviada com sucesso!');
       setRating('');
       setSelectedMovieId('');
-    })
-    .catch(error => {
+    } catch (error) {
       console.error('Erro ao enviar a classificação:', error);
-    });
+      alert('Erro ao enviar a classificação.');
+    }
   };
 
   return (

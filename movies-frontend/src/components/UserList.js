@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
+import api from '../services/api';  // Importe a instância de API configurada com o token
 
 const UserList = () => {
   const [users, setUsers] = useState([]);
 
   useEffect(() => {
-    axios.get('https://app-movies-dev-001-a7c0f2b7a3bwckgc.brazilsouth-01.azurewebsites.net/users')
+    // Usando a instância 'api' para fazer a requisição com o token JWT
+    api.get('/users')
       .then(response => {
         setUsers(response.data);  // Atualiza o estado com os usuários retornados
       })

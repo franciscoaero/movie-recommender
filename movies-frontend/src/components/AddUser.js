@@ -1,19 +1,21 @@
 import React, { useState } from 'react';
-import axios from 'axios';
+import api from '../services/api'; // Importe a instância de API configurada com o token
 
 function AddUser() {
   const [username, setUsername] = useState("");
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    axios.post('https://app-movies-dev-001-a7c0f2b7a3bwckgc.brazilsouth-01.azurewebsites.net/users', { username })
-      .then(response => {
-        alert('User created successfully!');
-        setUsername("");
-      })
-      .catch(error => {
-        alert('Error creating user.');
-      });
+
+    try {
+      // Use a instância 'api' com o token JWT já configurado
+      await api.post('/users', { username });
+      alert('User created successfully!');
+      setUsername(""); // Limpa o campo de input
+    } catch (error) {
+      console.error('Error creating user:', error);
+      alert('Error creating user.');
+    }
   };
 
   return (

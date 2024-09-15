@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import axios from 'axios';
+import api from '../services/api'; // Importe a instância de API configurada com o token
 
 function AddMovie() {
   const [title, setTitle] = useState('');
@@ -27,7 +27,8 @@ function AddMovie() {
     formData.append('cover', cover);
 
     try {
-      await axios.post('https://app-movies-dev-001-a7c0f2b7a3bwckgc.brazilsouth-01.azurewebsites.net/movies', formData, {
+      // Use a instância 'api' com o token JWT já configurado
+      await api.post('/movies', formData, {
         headers: {
           'Content-Type': 'multipart/form-data'
         }

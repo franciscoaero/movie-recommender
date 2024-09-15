@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
 import { useMsal } from '@azure/msal-react';  // Importar hook do MSAL para pegar o token
+import api from '../services/api';  // Importe a instância da API
 
 function TopRatedMovies() {
   const [movies, setMovies] = useState([]);
@@ -24,8 +24,8 @@ function TopRatedMovies() {
 
         const token = response.accessToken;
 
-        // Faz a requisição ao backend com o token
-        const res = await axios.get('https://app-movies-dev-001-a7c0f2b7a3bwckgc.brazilsouth-01.azurewebsites.net/movies/top-rated', {
+        // Faz a requisição ao backend usando a instância api com o token JWT
+        const res = await api.get('/movies/top-rated', {
           headers: {
             'Authorization': `Bearer ${token}`  // Adiciona o token no cabeçalho
           }

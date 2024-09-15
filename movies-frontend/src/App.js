@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Routes, Route, Link, BrowserRouter as Router, useParams, useNavigate } from 'react-router-dom';
 import TopRatedMovies from './components/TopRatedMovies';
 import RateMovie from './components/RateMovie';
@@ -19,10 +19,12 @@ function LoginPage() {
   const isAuthenticated = useIsAuthenticated();  // Verifica se o usuário está autenticado
   const navigate = useNavigate();
 
-  // Se o usuário já estiver autenticado, redireciona para a tela de seleção de usuários
-  if (isAuthenticated) {
-    navigate("/users");  // Redireciona para a rota de usuários
-  }
+  useEffect(() => {
+    // Se o usuário já estiver autenticado, redireciona para a tela de seleção de usuários
+    if (isAuthenticated) {
+      navigate("/users");
+    }
+  }, [isAuthenticated, navigate]);
 
   return (
     <div className="login-page">
