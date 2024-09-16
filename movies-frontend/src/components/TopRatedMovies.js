@@ -4,13 +4,15 @@ import api from '../services/api';  // Importe a instância da API
 
 function TopRatedMovies() {
   const [movies, setMovies] = useState([]);
-  const { instance } = useMsal();  // Pega a instância do MSAL
+  const { instance, accounts } = useMsal();  // Pega a instância do MSAL e as contas
 
   useEffect(() => {
     const fetchMovies = async () => {
       try {
-        // Pega a conta do usuário autenticado
-        const account = instance.getActiveAccount();
+        // Verifique se há uma conta ativa
+        const account = accounts.length > 0 ? accounts[0] : null;
+        console.log('Active Account:', account);
+
         if (!account) {
           console.error('No active account! Please log in.');
           return;
@@ -23,6 +25,7 @@ function TopRatedMovies() {
         });
 
         const token = response.accessToken;
+        console.log('[TRM] Access Token:', token);
 
         // Faz a requisição ao backend usando a instância api com o token JWT
         const res = await api.get('/movies/top-rated', {
@@ -31,14 +34,15 @@ function TopRatedMovies() {
           }
         });
 
-        setMovies(res.data);
+        console.log('[TRM] Top Rated Movies Data:', res.data);
+        setMovies(res.data);  // Atualiza o estado com os filmes retornados
       } catch (error) {
         console.error('Erro ao buscar os filmes com melhor classificação!', error);
       }
     };
 
     fetchMovies();
-  }, [instance]);
+  }, [instance, accounts]);
 
   return (
     <div>

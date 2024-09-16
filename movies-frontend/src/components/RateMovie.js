@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import api from '../services/api';  // Importe a instância de API configurada com o token
+import { useMsal } from '@azure/msal-react';  // Hook para autenticação
 import { useParams } from 'react-router-dom';
 
 function RateMovie() {
@@ -7,17 +8,42 @@ function RateMovie() {
   const [selectedMovieId, setSelectedMovieId] = useState('');
   const [rating, setRating] = useState('');
   const { userId } = useParams();  // Pegando o userId da URL
+  const { instance, accounts } = useMsal();  // Acessa a instância e as contas autenticadas
 
   useEffect(() => {
-    // Usando a instância 'api' para fazer a requisição
-    api.get('/movies')
-      .then(response => {
-        setMovies(response.data.movies);
-      })
-      .catch(error => {
+    const fetchMovies = async () => {
+      try {
+        // Verifica se há uma conta ativa
+        const account = accounts.length > 0 ? accounts[0] : null;
+
+        if (!account) {
+          console.error('No active account! Please log in.');
+          return;
+        }
+
+        // Obtém o token de acesso silenciosamente
+        const response = await instance.acquireTokenSilent({
+          scopes: ["api://aaece82d-86c9-4dbb-be37-60f630246081/access_as_user"],
+          account: account
+        });
+
+        const token = response.accessToken;
+
+        // Faz a requisição para buscar a lista de filmes
+        const res = await api.get('/movies', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        setMovies(res.data.movies);  // Atualiza o estado com os filmes retornados
+      } catch (error) {
         console.error('Erro ao buscar filmes:', error);
-      });
-  }, []);
+      }
+    };
+
+    fetchMovies();
+  }, [instance, accounts]);
 
   const submitRating = async () => {
     if (!selectedMovieId || !rating || !userId) {
@@ -26,12 +52,33 @@ function RateMovie() {
     }
 
     try {
-      // Usando a instância 'api' para enviar a classificação
-      await api.post('/ratings', {
-        user_id: userId,  // Incluindo userId da URL na requisição
-        movie_id: selectedMovieId,
-        rating: parseFloat(rating),
+      // Verifica se há uma conta ativa
+      const account = accounts.length > 0 ? accounts[0] : null;
+
+      if (!account) {
+        console.error('No active account! Please log in.');
+        return;
+      }
+
+      // Obtém o token de acesso silenciosamente
+      const response = await instance.acquireTokenSilent({
+        scopes: ["api://aaece82d-86c9-4dbb-be37-60f630246081/access_as_user"],
+        account: account
       });
+
+      const token = response.accessToken;
+
+      // Envia a classificação usando a API com o token
+      await api.post('/ratings', {
+        user_id: userId,  // Inclui o userId da URL
+        movie_id: selectedMovieId,
+        rating: parseFloat(rating)
+      }, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
       alert('Classificação enviada com sucesso!');
       setRating('');
       setSelectedMovieId('');
