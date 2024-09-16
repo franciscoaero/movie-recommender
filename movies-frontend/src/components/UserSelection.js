@@ -9,38 +9,37 @@ function UserSelection() {
 
   useEffect(() => {
     const fetchUsers = async () => {
-      try {
-        const account = instance.getActiveAccount();
-        console.log('Account:', account);  // Log para verificar a conta ativa
-        
-        if (!account) {
-          console.error('No active account! Please log in.');
-          return;
-        }
+      const account = instance.getActiveAccount();
+      console.log('Account:', account);  // Check the account
+      if (!account) {
+        console.error('No active account! Please log in.');
+        return;
+      }
 
+      try {
         const response = await instance.acquireTokenSilent({
           scopes: ["api://aaece82d-86c9-4dbb-be37-60f630246081/access_as_user"],
           account: account
         });
 
         const token = response.accessToken;
-        console.log('Access Token:', token);  // Log para verificar se o token está sendo adquirido corretamente
+        console.log('Access Token:', token);
 
         const res = await api.get('/users', {
           headers: {
-            'Authorization': `Bearer ${token}`  // Log do cabeçalho com o token
+            'Authorization': `Bearer ${token}`
           }
         });
 
-        console.log('Users from API:', res.data);  // Log dos dados retornados da API
         setUsers(res.data);
       } catch (error) {
-        console.error('Error fetching users:', error);  // Log para identificar possíveis erros
+        console.error('Erro ao buscar usuários:', error);
       }
     };
 
     fetchUsers();
-  }, [instance]);
+}, [instance]);
+
 
   return (
     <div className="user-selection">

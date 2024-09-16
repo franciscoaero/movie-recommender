@@ -9,7 +9,7 @@ function LoginButton() {
         instance.loginPopup(loginRequest)
             .then(response => {
                 console.log('Login Response:', response);  // Log da resposta do login
-                console.log('Access Token:', response.accessToken);  // Verificar o token de acesso
+                console.log('Access Token:', response.account);  // Verificar o token de acesso
             })
             .catch(error => {
                 console.error('Login Error:', error);  // Log de erro caso algo dê errado no login
