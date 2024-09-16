@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { PublicClientApplication } from '@azure/msal-browser';
-import { msalConfig, loginRequest } from './msalConfig';
+import { msalConfig, loginRequest } from '../msalConfig';
 
 const msalInstance = new PublicClientApplication(msalConfig);
 
