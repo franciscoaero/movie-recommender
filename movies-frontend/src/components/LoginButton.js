@@ -8,8 +8,12 @@ function LoginButton() {
     const handleLogin = () => {
         instance.loginPopup(loginRequest)
             .then(response => {
-                console.log('Login Response:', response);  // Log da resposta do login
-                console.log('Access Token:', response.account);  // Verificar o token de acesso
+                if (response && response.account && response.idToken) {
+                    console.log('Login Response:', response);  // Log da resposta do login
+                    console.log('Access Token:', response.idToken);  // Verificar o token de acesso
+                } else {
+                    console.error('Invalid login response.');
+                }
             })
             .catch(error => {
                 console.error('Login Error:', error);  // Log de erro caso algo dê errado no login

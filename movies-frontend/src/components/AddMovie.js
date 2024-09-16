@@ -58,6 +58,7 @@ function AddMovie() {
     } catch (error) {
       console.error('Error uploading movie:', error);
       alert('Failed to add movie');
+      instance.loginRedirect();  // Redireciona para a página de login
     }
   };
 
