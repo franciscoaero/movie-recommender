@@ -1,8 +1,6 @@
 from flask import Flask, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
-from flask_limiter import Limiter
-from flask_limiter.util import get_remote_address
 from dotenv import load_dotenv
 import os
 from azure.storage.blob import BlobServiceClient, ContentSettings
@@ -12,7 +10,6 @@ import requests
 from functools import wraps
 from jwt.algorithms import RSAAlgorithm
 import json
-import uuid
 
 # Carregar variáveis de ambiente do arquivo .env
 load_dotenv()
@@ -102,7 +99,7 @@ def token_required(f):
             token = request.headers['Authorization'].split()[1]  # O token vem como "Bearer {token}"
 
         if not token:
-            return jsonify({'message': 'Authentication failed'}), 401
+            return jsonify({'message': 'Token is missing!'}), 401
 
         try:
             # Obtenha as chaves públicas (JWKS) do Azure AD
@@ -125,7 +122,7 @@ def token_required(f):
                     break
 
             if not rsa_key:
-                return jsonify({'message': 'Authentication failed'}), 401
+                return jsonify({'message': 'Token is invalid! RSA key not found.'}), 401
 
             # Decodificar e verificar o token
             public_key = RSAAlgorithm.from_jwk(json.dumps(rsa_key))
@@ -133,14 +130,13 @@ def token_required(f):
                 token,
                 public_key,
                 algorithms=["RS256"],
-                audience=f"api://{os.getenv('AZURE_TENANT_ID')}",  # Verifique o 'aud' (audience)
-                issuer=f"https://sts.windows.net/{os.getenv('AZURE_TENANT_ID')}/",  # Verifique o emissor
-                options={"verify_exp": True}  # Verifica se a expiração está sendo validada
+                audience="api://aaece82d-86c9-4dbb-be37-60f630246081",  # Verifique o 'aud' (audience)
+                issuer=f"https://sts.windows.net/{os.getenv('AZURE_TENANT_ID')}/"  # Verifique o emissor
             )
             current_user = decoded['sub']  # ID do usuário (subject)
 
         except jwt.ExpiredSignatureError:
-            return jsonify({'message': 'Authentication failed'}), 401
+            return jsonify({'message': 'Token has expired!'}), 401
         except jwt.InvalidTokenError as e:
             return jsonify({'message': 'Token is invalid!', 'error': str(e)}), 401
 
@@ -153,15 +149,8 @@ def token_required(f):
 def home():
     return jsonify(message="Welcome to the Movie Recommendation API!")
 
-limiter = Limiter(
-    get_remote_address,
-    app=application,
-    default_limits=["5 per minute"]  # Limite padrão de requisições
-)
-
 # Endpoint para listar todos os usuários
 @application.route('/users', methods=['GET'])
-@limiter.limit("5 per minute")
 @token_required
 def get_users(current_user):
     users = User.query.all()
@@ -170,7 +159,6 @@ def get_users(current_user):
 
 # Endpoint para adicionar um novo usuário
 @application.route('/users', methods=['POST'])
-@limiter.limit("5 per minute")
 @token_required
 def add_user(current_user):
     username = request.json.get('username')
@@ -187,13 +175,13 @@ def add_user(current_user):
 def upload_cover_to_blob(file):
     try:
         # Preparar o nome seguro do arquivo
-        filename = f"{uuid.uuid4()}.{file.filename.rsplit('.', 1)[1].lower()}"
+        filename = secure_filename(file.filename)
 
         # Criar um cliente para o blob
         blob_client = blob_service_client.get_blob_client(container=container_name, blob=filename)
 
-        # Definir o tipo de conteúdo para a imagem e fazer upload
-        blob_client.upload_blob(file, overwrite=True, content_settings=ContentSettings(content_type=file.content_type))
+        # Definir o tipo de conteúdo para a imagem
+        blob_client.upload_blob(file, content_settings=ContentSettings(content_type=file.content_type))
 
         # Retornar a URL do blob
         return blob_client.url
@@ -203,7 +191,6 @@ def upload_cover_to_blob(file):
     
 # Endpoint para adicionar um novo filme com upload da capa
 @application.route('/movies', methods=['POST'])
-@limiter.limit("5 per minute")
 @token_required
 def add_movie(current_user):
     title = request.form.get('title')
@@ -224,7 +211,6 @@ def add_movie(current_user):
 
 # Endpoint para adicionar uma avaliação de filme
 @application.route('/ratings', methods=['POST'])
-@limiter.limit("5 per minute")
 @token_required
 def add_rating(current_user):
     user_id = request.json.get('user_id')
@@ -242,7 +228,6 @@ def add_rating(current_user):
 
 # Endpoint para retornar os filmes com melhores classificações
 @application.route('/movies/top-rated', methods=['GET'])
-@limiter.limit("5 per minute")
 @token_required
 def get_top_rated_movies(current_user):
     top_rated_movies = db.session.query(
@@ -262,7 +247,6 @@ def get_top_rated_movies(current_user):
 
 # Endpoint para consultar as avaliações de um filme específico
 @application.route('/movies/<int:movie_id>/ratings', methods=['GET'])
-@limiter.limit("5 per minute")
 @token_required
 def get_movie_ratings(current_user, movie_id):
     ratings = Rating.query.filter_by(movie_id=movie_id).all()
@@ -275,7 +259,6 @@ def get_movie_ratings(current_user, movie_id):
 
 # Endpoint para listar todos os filmes
 @application.route('/movies', methods=['GET'])
-@limiter.limit("5 per minute")
 @token_required
 def get_movies(current_user):
     movies = Movie.query.all()
@@ -287,3 +270,4 @@ if __name__ == '__main__':
     with application.app_context():
         db.create_all()  # Cria as tabelas no banco de dados
     application.run(debug=True)
+    
