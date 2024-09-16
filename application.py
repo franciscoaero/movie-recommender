@@ -44,7 +44,7 @@ else:
         f'Encrypt=yes;'
         f'TrustServerCertificate=no;'
         f'Connection Timeout=30;'
-        f'Authentication=ActiveDirectoryManagedIdentity;'  # Usando Managed Identity
+        f'Authentication=ActiveDirectoryMSI;'
     )
 
     try:
