@@ -80,7 +80,7 @@ function App() {
         </main>
 
         <footer className="footer">
-          <p>© 2024 Movie Rating App - All rights reserved - V1.0</p>
+          <p>© 2024 Movie Rating App - All rights reserved - V1.1</p>
         </footer>
       </Router>
     </MsalProvider>
