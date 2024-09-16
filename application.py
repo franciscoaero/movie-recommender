@@ -102,10 +102,10 @@ def token_required(f):
             return jsonify({'message': 'Token is missing!'}), 401
 
         try:
-            # Obtenha as chaves públicas (JWKS) do Azure AD
+            # Obter as chaves públicas (JWKS) do Azure AD
             jwks = get_jwks_keys()
 
-            # Pega o cabeçalho do token JWT
+            # Extrair cabeçalho do token JWT
             header = jwt.get_unverified_header(token)
 
             # Busca a chave correspondente pelo 'kid'
@@ -130,8 +130,8 @@ def token_required(f):
                 token,
                 public_key,
                 algorithms=["RS256"],
-                audience="api://aaece82d-86c9-4dbb-be37-60f630246081",  # Verifique o 'aud' (audience)
-                issuer=f"https://sts.windows.net/{os.getenv('AZURE_TENANT_ID')}/"  # Verifique o emissor
+                audience=os.getenv('AZURE_CLIENT_ID'),  # Use o 'audience' configurado no Azure AD
+                issuer=f"https://sts.windows.net/{os.getenv('AZURE_TENANT_ID')}/"  # Use o emissor configurado
             )
             current_user = decoded['sub']  # ID do usuário (subject)
 
@@ -143,6 +143,7 @@ def token_required(f):
         return f(current_user, *args, **kwargs)
 
     return decorated
+
 
 # Rota inicial
 @application.route('/')
