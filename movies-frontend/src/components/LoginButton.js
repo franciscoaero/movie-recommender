@@ -8,10 +8,12 @@ function LoginButton() {
     const handleLogin = () => {
         instance.loginPopup(loginRequest)
             .then(response => {
-                // O token de acesso estará em response.accessToken
-                console.log('Access Token:', response.accessToken);
+                console.log('Login Response:', response);  // Log da resposta do login
+                console.log('Access Token:', response.accessToken);  // Verificar o token de acesso
             })
-            .catch(error => console.error(error));
+            .catch(error => {
+                console.error('Login Error:', error);  // Log de erro caso algo dê errado no login
+            });
     };
 
     return <button onClick={handleLogin}>Login</button>;

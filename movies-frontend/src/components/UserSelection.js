@@ -1,42 +1,41 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { useMsal } from '@azure/msal-react';  // Importar o hook do MSAL para pegar o token
-import api from '../services/api';  // Importando a instância do api.js da pasta services
+import { useMsal } from '@azure/msal-react';  
+import api from '../services/api';  
 
 function UserSelection() {
   const [users, setUsers] = useState([]);
-  const { instance } = useMsal();  // Pega a instância do MSAL
+  const { instance } = useMsal();  
 
   useEffect(() => {
     const fetchUsers = async () => {
       try {
-        // Pega a conta do usuário autenticado
         const account = instance.getActiveAccount();
+        console.log('Account:', account);  // Log para verificar a conta ativa
+        
         if (!account) {
           console.error('No active account! Please log in.');
           return;
         }
 
-        // Usa o método acquireTokenSilent para obter o token de acesso
         const response = await instance.acquireTokenSilent({
           scopes: ["api://aaece82d-86c9-4dbb-be37-60f630246081/access_as_user"],
           account: account
         });
 
         const token = response.accessToken;
-        console.log('Token:', token);  // Para verificar se o token está sendo obtido corretamente
+        console.log('Access Token:', token);  // Log para verificar se o token está sendo adquirido corretamente
 
-
-        // Faz a requisição ao backend usando a instância api com o token JWT
         const res = await api.get('/users', {
           headers: {
-            'Authorization': `Bearer ${token}`  // Passa o token no cabeçalho da requisição
+            'Authorization': `Bearer ${token}`  // Log do cabeçalho com o token
           }
         });
 
+        console.log('Users from API:', res.data);  // Log dos dados retornados da API
         setUsers(res.data);
       } catch (error) {
-        console.error('Erro ao buscar usuários:', error);
+        console.error('Error fetching users:', error);  // Log para identificar possíveis erros
       }
     };
 
