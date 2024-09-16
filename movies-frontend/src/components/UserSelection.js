@@ -9,37 +9,37 @@ function UserSelection() {
 
   useEffect(() => {
     const fetchUsers = async () => {
-      const account = instance.getActiveAccount();
-      console.log('Account:', account);  // Check the account
-      if (!account) {
-        console.error('No active account! Please log in.');
-        return;
-      }
+        const account = instance.getActiveAccount();
+        console.log('Account:', account);  // Verifique se a conta está sendo capturada
 
-      try {
-        const response = await instance.acquireTokenSilent({
-          scopes: ["api://aaece82d-86c9-4dbb-be37-60f630246081/access_as_user"],
-          account: account
-        });
+        if (!account) {
+            console.error('No active account! Please log in.');
+            return;
+        }
 
-        const token = response.accessToken;
-        console.log('Access Token:', token);
+        try {
+            const response = await instance.acquireTokenSilent({
+                scopes: ["api://aaece82d-86c9-4dbb-be37-60f630246081/access_as_user"],
+                account: account
+            });
 
-        const res = await api.get('/users', {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
+            const token = response.accessToken;
+            console.log('[U.S]Access Token:', token);  // Verifique o token
 
-        setUsers(res.data);
-      } catch (error) {
-        console.error('Erro ao buscar usuários:', error);
-      }
+            const res = await api.get('/users', {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            setUsers(res.data);
+        } catch (error) {
+            console.error('Erro ao buscar usuários:', error);
+        }
     };
 
     fetchUsers();
 }, [instance]);
-
 
   return (
     <div className="user-selection">
