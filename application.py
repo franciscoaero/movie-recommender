@@ -153,7 +153,11 @@ def token_required(f):
 def home():
     return jsonify(message="Welcome to the Movie Recommendation API!")
 
-limiter = Limiter(application, key_func=get_remote_address)
+limiter = Limiter(
+    get_remote_address,
+    app=application,
+    default_limits=["5 per minute"]  # Limite padrão de requisições
+)
 
 # Endpoint para listar todos os usuários
 @application.route('/users', methods=['GET'])
