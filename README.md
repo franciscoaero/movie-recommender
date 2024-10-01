@@ -22,7 +22,7 @@ O projeto tem como objetivo desenvolver um sistema de recomendação de filmes c
 
 ## Descrição
 
-A aplicação permite que os usuários façam login, avaliem filmes e visualizem os filmes mais bem avaliados. As capas dos filmes são armazenadas no **Azure Blob Storage**. O sistema utiliza autenticação via **Azure AD** com tokens JWT e permite a interação segura com os dados do **banco Azure SQL**.
+A aplicação permite que os usuários façam login, avaliem filmes e visualizem os filmes mais bem avaliados. As capas dos filmes são armazenadas no **Azure Blob Storage**. O sistema utiliza autenticação via **Azure AD** com tokens JWT e permite a interação segura com os dados do **banco Azure SQL**. Veja o resultado [aqui](https://youtu.be/zi5nf9q49Rk)
 
 ## Funcionalidades
 
